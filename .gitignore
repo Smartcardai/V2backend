@@ -1,8 +1,8 @@
 cred_files/pdf-chat-71f63-firebase-adminsdk-p9pe7-df9207e3ae.json
 env/
 main.py
-
-
+.cred_files
+.env
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/python
