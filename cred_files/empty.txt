@@ -1,0 +1,2 @@
+keep the firebase cred json file in cred_files folder
+also change the cred_file_path in firebase_fileUploads.py file as required
