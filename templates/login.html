@@ -20,18 +20,13 @@
                         <label for="password">Password</label>
                         <input name="password" type="password" class="form-control" id="password" placeholder="Enter password">
                     </div>
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="terms">
-                        <label class="form-check-label" for="terms">Terms and conditions accepted</label>
-                    </div>
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="privacy">
-                        <label class="form-check-label" for="privacy">Privacy policy accepted</label>
-                    </div>
-                    <button type="submit" name="login" class="btn btn-primary btn-block mt-3">Login</button>
+                    <button type="submit" name="login_form" class="btn btn-primary btn-block mt-3">Login</button>
                 </form>
                 <form method="POST" action="/login">
                     <button type="submit" name="oauth" class="btn btn-danger btn-block mt-2">Continue with Google</button>
+                </form>
+                <form method="GET" action="/register">
+                    <button type="submit" class="btn btn-primary btn-block mt-2">Register</button>
                 </form>
             </div>
         </div>

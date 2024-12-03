@@ -1,4 +1,5 @@
 import datetime
+import uuid
 from fastapi import FastAPI, Request, HTTPException, Depends, Form, Security
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordBearer
@@ -83,13 +84,73 @@ async def check_authentication(token: str = Security(oauth2_scheme)):
 def load_user(user_id: str, db: Session = Depends(get_db)):
     return db.query(User).filter(User.id == user_id).first()
 
+@app.get('/register')
+async def register(request: Request):
+    return templates.TemplateResponse('register.html', {'request': request})
+
+from fastapi import HTTPException
+
+@app.post('/register')
+async def register_post(request: Request, db: Session = Depends(get_db)):
+    try:
+        form_data = await request.json()  # Expecting JSON payload
+    except:
+        form_data = await request.form()  # Fallback to form data
+
+    user_data = {
+        'id': uuid.uuid4().hex,
+        'username': form_data['username'],
+        'email': form_data['email'],
+        'password': form_data['password'], 
+        'tnc_accepted': 'tnc_accepted' in form_data,
+        'privacy_accepted': 'privacy_accepted' in form_data
+    }
+    
+    # Check if username or email already exists
+    username_exist = db.query(User).filter(User.username == form_data.get('username')).first() is not None
+    email_exist = db.query(User).filter(User.email == form_data.get('email')).first() is not None
+    
+    if username_exist:
+        if request.headers.get('content-type') == 'application/json':
+            raise HTTPException(status_code=400, detail="Username already exists!")
+        return templates.TemplateResponse('register.html', {'request': request, 'message': 'Username already exists!'})
+    if email_exist:
+        if request.headers.get('content-type') == 'application/json':
+            raise HTTPException(status_code=400, detail="Email already exists!")
+        return templates.TemplateResponse('register.html', {'request': request, 'message': 'Email already exists!'})
+
+    new_user = User(**user_data)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    if request.headers.get('content-type') == 'application/json':
+        return {"message": "User created successfully!"}
+    
+    return RedirectResponse('/login', status_code=303)
+
+
 @app.get('/login')
 async def login(request: Request):
     return templates.TemplateResponse('login.html', {'request': request})
 
 @app.post('/login')
-async def login_post(request: Request):
+async def login_post(request: Request, db: Session = Depends(get_db)):
     form_data = await request.form()
+    if 'login_form' in form_data:
+        # Check credentials
+        user = db.query(User).filter(User.username == form_data['username']).first()
+        if not user or user.password != form_data['password']:
+            raise InvalidCredentialsException
+        # Create access token
+        access_token = login_manager.create_access_token(
+            data=dict(sub=user.id)
+        )
+        # Redirect with token
+        response = RedirectResponse(url="/home")
+        login_manager.set_cookie(response, access_token)
+        return response
+    
     if 'oauth' in form_data:
         # Find the Google provider configuration
         google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
@@ -171,8 +232,12 @@ async def callback(request: Request, db: Session = Depends(get_db)):
 
 @app.get('/home')
 async def home(request: Request):
-    
     return templates.TemplateResponse('home.html', {'request': request})
+
+@app.post('/home')
+async def home_post(request: Request):
+    return templates.TemplateResponse('home.html', {'request': request})
+
 
 @app.get('/logout')
 async def logout():
