@@ -38,8 +38,8 @@ class User(Base):
     username = Column(String(100), unique=True)
     password = Column(String(100))
     email = Column(String(100), unique=True)
-    tnc_accepted = Column(Boolean, default=False)
-    privacy_accepted = Column(Boolean, default=False)
+    tnc_accepted = Column(Boolean, default=True)
+    privacy_accepted = Column(Boolean, default=True)
     signup_date = Column(DateTime, default=datetime.datetime.now())
     last_login = Column(DateTime, default=datetime.datetime.now())
     
@@ -83,6 +83,22 @@ async def check_authentication(token: str = Security(oauth2_scheme)):
 @login_manager.user_loader()
 def load_user(user_id: str, db: Session = Depends(get_db)):
     return db.query(User).filter(User.id == user_id).first()
+
+@app.get('/')
+async def root(request: Request, db: Session = Depends(get_db)):
+    # token = request.cookies.get('access_token')
+    # if token:
+    #     try:
+    #         payload = login_manager.decode_token(token)
+    #         user_id = payload.get("sub")
+    #         if user_id is not None:
+    #             user = db.query(User).filter(User.id == user_id).first()
+    #             if user is not None:
+    #                 return RedirectResponse(url='/home')
+    #     except Exception as e:
+    #         print(e)
+    #         pass
+    return RedirectResponse(url='/login')
 
 @app.get('/register')
 async def register(request: Request):
