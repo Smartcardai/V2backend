@@ -18,31 +18,12 @@ ACCESS_TOKEN_EXPIRE_HOURS=2     # change as needed. for jwt tokens
 * Get these at https://console.cloud.google.com/apis/credentials
 * Create OAuth 2.0 Client ID
    
-### After successful login, return the token as part of the response:
-```py
-return JSONResponse(
-    content={"access_token": access_token, "token_type": "bearer"},
-    headers={"Authorization": f"Bearer {access_token}"}
-)
-```
 
 ### Accessing home route
 * API should have a header with:\
 "key": "Authorization",\
 "value": "Bearer <access_token_generated_by_login>"
 
-
-### Handling Authorization Header on Requests:
-For frontend integration, the frontend should send the token like this:
-```javascript
-Copy code
-fetch('/api/home', {
-    method: 'GET',
-    headers: {
-        'Authorization': `Bearer ${access_token}`
-    }
-})
-```
 
 ### Logout
 * Frontend should clear the token from localStorage or cookies
