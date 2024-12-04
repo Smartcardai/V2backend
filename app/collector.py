@@ -1,30 +1,55 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from typing import List
-import shutil
+from ftplib import FTP
 
 app = FastAPI()
 
-# Allowed file extensions
-ALLOWED_EXTENSIONS = {
-    "mp3", "mp4", "png", "jpeg", "jpg", "pdf", "doc", "docx", "txt"
-}
+# FTP Credentials
+FTP_HOST = 'ftp.smartcardai.com'  # Replace with your FTP server
+FTP_USERNAME = 'wwwsmart'  # Replace with your FTP username
+FTP_PASSWORD = 'd7Jso5AOk2a'  # Replace with your FTP password
+FTP_TARGET_DIR = '/uploads'  # Directory on the FTP server where files will be stored
 
-def validate_file_type(file: UploadFile):
-    file_extension = file.filename.split(".")[-1].lower()
-    if file_extension not in ALLOWED_EXTENSIONS:
-        raise HTTPException(status_code=400, detail="Unsupported file type.")
+
+def upload_to_ftp(file_path: str, file_name: str):  
+    """
+    Uploads a file to the FTP server.
+    """
+    try:
+        # Connect to FTP server
+        ftp = FTP(FTP_HOST)
+        ftp.login(user=FTP_USERNAME, passwd=FTP_PASSWORD)
+        ftp.cwd(FTP_TARGET_DIR)  # Change to the target directory
+
+        # Open the file in binary mode and upload it
+        with open(file_path, 'rb') as file:
+            ftp.storbinary(f'STOR {file_name}', file)
+        
+        ftp.quit()  # Close the FTP connection
+        return {"message": f"File '{file_name}' uploaded successfully to {FTP_TARGET_DIR}."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"FTP upload failed: {str(e)}")
+
 
 @app.post("/upload/")
 async def upload_file(files: List[UploadFile] = File(...)):
     """
-    Accept multiple files and validate their types.
+    Accepts multiple files and uploads them to the FTP server.
     """
+    results = []
     for file in files:
-        validate_file_type(file)
+        file_path = f"./{file.filename}"  # Temporarily save file locally
+        with open(file_path, "wb") as buffer:
+            buffer.write(await file.read())
 
-        # Save file locally
-        with open(f"./uploads/{file.filename}", "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        # Upload the file to FTP
+        try:
+            result = upload_to_ftp(file_path, file.filename)
+            results.append(result)
+        finally:
+            # Clean up local temporary file
+            import os
+            if os.path.exists(file_path):
+                os.remove(file_path)
 
-    return {"message": f"Successfully uploaded {len(files)} file(s)."}
-
+    return {"results": results}
