@@ -69,6 +69,8 @@ class Client:
         self._exec(Queries.define_dist_euclid_func())
         self._exec(Queries.drop_dist_dot_func())
         self._exec(Queries.define_dist_dot_func())
+        self._exec(Queries.drop_dist_manhattan_func())
+        self._exec(Queries.define_dist_manhattan_func())
 
     def _connect(self) -> None:
         self._conn: MySQLConnection = mysql.connector.connect(

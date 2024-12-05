@@ -77,6 +77,22 @@ BEGIN
 END
 '''
 
+_DIST_MANHATTAN_FUNC = \
+    '''
+CREATE FUNCTION DIST_MANHATTAN(v1 JSON, v2 JSON)
+RETURNS FLOAT DETERMINISTIC
+BEGIN
+    DECLARE dist FLOAT DEFAULT 0;
+    DECLARE i INT DEFAULT 0;
+    DECLARE len INT DEFAULT JSON_LENGTH(v1);
+    WHILE i < len DO
+        SET dist = dist + (JSON_EXTRACT(v1, CONCAT('$[', i, ']')) - JSON_EXTRACT(v2, CONCAT('$[', i, ']')));
+        SET i = i + 1;
+    END WHILE;
+    RETURN dist;
+END
+'''
+
 _SEARCH_QUERY_GET_CANDIDATES = \
     '''
 SELECT vector_id, BIT_COUNT(binary_code ^ UNHEX(%s)) AS hamming_distance
@@ -135,6 +151,14 @@ class Queries:
         return 'DROP FUNCTION IF EXISTS DIST_DOT'
 
     @staticmethod
+    def define_dist_manhattan_func() -> str:
+        return _DIST_MANHATTAN_FUNC
+
+    @staticmethod
+    def drop_dist_manhattan_func() -> str:
+        return 'DROP FUNCTION IF EXISTS DIST_MANHATTAN'
+
+    @staticmethod
     def create_db() -> str:
         return f'CREATE DATABASE IF NOT EXISTS {Queries.DATABASE_NAME};'
 
@@ -161,7 +185,8 @@ class Queries:
         dist_func_names = {
             Distance.COSINE: 'DIST_COSINE',
             Distance.EUCLID: 'DIST_EUCLID',
-            Distance.DOT: 'DIST_DOT'
+            Distance.DOT: 'DIST_DOT',
+            Distance.MANHATTAN: 'DIST_MANHATTAN'
         }
 
         if distance not in dist_func_names:
