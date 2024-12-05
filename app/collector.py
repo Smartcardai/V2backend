@@ -1,5 +1,5 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
-from typing import List
+from fastapi import FastAPI, File, UploadFile, HTTPException, Query
+from typing import List, Optional
 from ftplib import FTP
 import os
 
@@ -9,10 +9,18 @@ app = FastAPI()
 FTP_HOST = 'ftp.smartcardai.com'
 FTP_USERNAME = 'wwwsmart'
 FTP_PASSWORD = 'd7Jso5AOk2a'
-FTP_TARGET_DIR = '/uploads'
+FTP_BASE_DIR = '/uploads'
 
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "txt", "pdf", "docx"}
+
+def connect_ftp():
+    """
+    Establish and return an FTP connection.
+    """
+    ftp = FTP(FTP_HOST)
+    ftp.login(user=FTP_USERNAME, passwd=FTP_PASSWORD)
+    return ftp
 
 def validate_file_type(file: UploadFile):
     """
@@ -22,41 +30,117 @@ def validate_file_type(file: UploadFile):
     if file_extension not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail=f"Unsupported file type: {file_extension}")
 
-def upload_to_ftp(file_path: str, file_name: str):
+@app.post("/createfolder/")
+def create_folder(folder_name: str):
     """
-    Uploads a file to the FTP server.
+    Create a folder on the FTP server.
     """
     try:
-        ftp = FTP(FTP_HOST)
-        ftp.login(user=FTP_USERNAME, passwd=FTP_PASSWORD)
-        ftp.cwd(FTP_TARGET_DIR)
-
-        with open(file_path, 'rb') as file:
-            ftp.storbinary(f'STOR {file_name}', file)
-        
+        ftp = connect_ftp()
+        target_path = f"{FTP_BASE_DIR}/{folder_name}"
+        ftp.mkd(target_path)
         ftp.quit()
-        return {"message": f"File '{file_name}' uploaded successfully to {FTP_TARGET_DIR}."}
+        return {"message": f"Folder '{folder_name}' created successfully."}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"FTP upload failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create folder: {str(e)}")
 
 @app.post("/upload/")
-async def upload_file(files: List[UploadFile] = File(...)):
+async def upload_file(
+    folder_name: str = Query(..., description="Folder to upload files into"),
+    files: List[UploadFile] = File(...)
+):
     """
-    Accepts multiple files and uploads them to the FTP server.
+    Upload files to a specific folder on the FTP server.
     """
     results = []
     for file in files:
         validate_file_type(file)
-        
+
+        # Save the file locally first
         file_path = f"./{file.filename}"
         with open(file_path, "wb") as buffer:
             buffer.write(await file.read())
 
         try:
-            result = upload_to_ftp(file_path, file.filename)
-            results.append(result)
+            ftp = connect_ftp()
+            ftp.cwd(f"{FTP_BASE_DIR}/{folder_name}")
+            with open(file_path, 'rb') as f:
+                ftp.storbinary(f"STOR {file.filename}", f)
+            ftp.quit()
+            results.append({"file": file.filename, "status": "uploaded"})
+        except Exception as e:
+            results.append({"file": file.filename, "status": f"failed: {str(e)}"})
         finally:
             if os.path.exists(file_path):
                 os.remove(file_path)
 
     return {"results": results}
+
+@app.delete("/deletefolder/")
+def delete_folder(folder_name: str):
+    """
+    Delete a folder from the FTP server.
+    """
+    try:
+        ftp = connect_ftp()
+        ftp.rmd(f"{FTP_BASE_DIR}/{folder_name}")
+        ftp.quit()
+        return {"message": f"Folder '{folder_name}' deleted successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete folder: {str(e)}")
+
+@app.get("/selectfolder/")
+def select_folder():
+    """
+    List all folders in the base directory on the FTP server.
+    """
+    try:
+        ftp = connect_ftp()
+        ftp.cwd(FTP_BASE_DIR)
+        folders = ftp.nlst()
+        ftp.quit()
+        return {"folders": folders}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to list folders: {str(e)}")
+
+@app.delete("/deletefiles/")
+def delete_files(folder_name: str, file_names: List[str]):
+    """
+    Delete specific files from a folder on the FTP server.
+    """
+    try:
+        ftp = connect_ftp()
+        ftp.cwd(f"{FTP_BASE_DIR}/{folder_name}")
+        for file_name in file_names:
+            ftp.delete(file_name)
+        ftp.quit()
+        return {"message": f"Files {file_names} deleted successfully from folder '{folder_name}'."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete files: {str(e)}")
+
+@app.get("/selectfiles/")
+def select_files(folder_name: str):
+    """
+    List all files in a specific folder on the FTP server.
+    """
+    try:
+        ftp = connect_ftp()
+        ftp.cwd(f"{FTP_BASE_DIR}/{folder_name}")
+        files = ftp.nlst()
+        ftp.quit()
+        return {"files": files}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to list files: {str(e)}")
+
+@app.get("/viewfile/")
+def view_file(folder_name: str, file_name: str):
+    """
+    Get the URL of a specific file.
+    """
+    try:
+        return {
+            "file_url": f"http://{FTP_HOST}/{FTP_BASE_DIR}/{folder_name}/{file_name}",
+            "folder_name": folder_name
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get file URL: {str(e)}")
