@@ -135,4 +135,4 @@ class Collection:
                 self.name, placeholders, self._vector_config.distance,
             ), (json.dumps(normalized_query), *candidates, limit),
         )
-        return [PointResult(*row) for row in self._meta.client._curr.fetchall()]
+        return [PointResult(row[0], row[1], json.loads(row[2]), row[3]) for row in self._meta.client._curr.fetchall()]
