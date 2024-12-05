@@ -184,3 +184,4 @@ pyrightconfig.json
 
 .vscode/
 test_tmp/
+test.py

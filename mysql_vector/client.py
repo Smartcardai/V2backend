@@ -65,6 +65,8 @@ class Client:
         self._exec(Queries.create_collection_proc())
         self._exec(Queries.drop_dist_cosine_func())
         self._exec(Queries.define_dist_cosine_func())
+        self._exec(Queries.drop_dist_euclid_func())
+        self._exec(Queries.define_dist_euclid_func())
 
     def _connect(self) -> None:
         self._conn: MySQLConnection = mysql.connector.connect(
@@ -97,3 +99,6 @@ class Client:
             size=dimension, distance=distance,
         )
         return new_collection
+
+    def delete_collection(self, name: str) -> None:
+        self._curr.execute(Queries.delete_collection(name))

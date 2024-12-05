@@ -44,6 +44,23 @@ BEGIN
 END
 '''
 
+_DIST_EUCLID_FUNC = \
+    '''
+CREATE FUNCTION DIST_EUCLID(v1 JSON, v2 JSON)
+RETURNS FLOAT DETERMINISTIC
+BEGIN
+    DECLARE dot_prod FLOAT DEFAULT 0;
+    DECLARE i INT DEFAULT 0;
+    DECLARE len INT DEFAULT JSON_LENGTH(v1);
+    WHILE i < len DO
+        SET dot_prod = dot_prod + (JSON_EXTRACT(v1, CONCAT('$[', i, ']')) * JSON_EXTRACT(v2, CONCAT('$[', i, ']')));
+        SET i = i + 1;
+    END WHILE;
+    SET dot_prod = SQRT(2 * (1 - dot_prod));
+    RETURN dot_prod;
+END
+'''
+
 _SEARCH_QUERY_GET_CANDIDATES = \
     '''
 SELECT vector_id, BIT_COUNT(binary_code ^ UNHEX(%s)) AS hamming_distance
@@ -86,6 +103,14 @@ class Queries:
         return 'DROP FUNCTION IF EXISTS DIST_COSINE'
 
     @staticmethod
+    def define_dist_euclid_func() -> str:
+        return _DIST_EUCLID_FUNC
+
+    @staticmethod
+    def drop_dist_euclid_func() -> str:
+        return 'DROP FUNCTION IF EXISTS DIST_EUCLID'
+
+    @staticmethod
     def create_db() -> str:
         return f'CREATE DATABASE IF NOT EXISTS {Queries.DATABASE_NAME};'
 
@@ -111,12 +136,19 @@ class Queries:
     def get_search_vectors(collection_name: str, placeholders: str, distance: Distance) -> str:
         dist_func_names = {
             Distance.COSINE: 'DIST_COSINE',
+            Distance.EUCLID: 'DIST_EUCLID',
         }
 
         if distance not in dist_func_names:
-            raise NotImplementedError('Only Cosine distance is implemented')
+            raise NotImplementedError(
+                f'Function for {distance} is not implemented',
+            )
 
         return _SEARCH_QUERY_GET_VECTORS\
             .replace('<collection_name>', collection_name)\
             .replace('<placeholders>', placeholders)\
             .replace('<dist_func>', dist_func_names[distance])
+
+    @staticmethod
+    def delete_collection(name: str) -> str:
+        return f'DROP TABLE IF EXISTS {name}'
