@@ -7,7 +7,7 @@ create .env file in same level as /app folder
 GOOGLE_DISCOVERY_URL=https://accounts.google.com/.well-known/openid-configuration
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=       
-DATABASE_URL=mysql+mysqlconnector://root:password@localhost/backend # in production, mysql+mysqlconnector://wwwsmart:d7Jso5AOk2a@smartcardai.com/wwwsmart_users_creds
+DATABASE_URL=mysql+mysqlconnector://wwwsmart:d7Jso5AOk2a@smartcardai.com/wwwsmart_users_creds
 SECRET_KEY=     # random string for security
 OAUTHLIB_INSECURE_TRANSPORT=1 # For bypassing http error, development only, OAuth requires https in production. Remove this
 LLM_KEY=    # not used as of now

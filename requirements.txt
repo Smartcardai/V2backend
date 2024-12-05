@@ -13,8 +13,6 @@ unstructured
 selenium
 playwright
 python-docx
-python-multipart
-uvicorn
 langchain-experimental
 scikit-learn
 firebase-admin
@@ -33,3 +31,11 @@ google-auth-oauthlib
 openpyxl
 xlrd
 tabulate
+uvicorn
+sqlalchemy
+pydantic
+requests
+oauthlib
+fastapi-login
+jinja2
+PyJWT
