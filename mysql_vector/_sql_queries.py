@@ -61,6 +61,22 @@ BEGIN
 END
 '''
 
+_DIST_DOT_FUNC = \
+    '''
+CREATE FUNCTION DIST_DOT(v1 JSON, v2 JSON)
+RETURNS FLOAT DETERMINISTIC
+BEGIN
+    DECLARE dot_prod FLOAT DEFAULT 0;
+    DECLARE i INT DEFAULT 0;
+    DECLARE len INT DEFAULT JSON_LENGTH(v1);
+    WHILE i < len DO
+        SET dot_prod = dot_prod + (JSON_EXTRACT(v1, CONCAT('$[', i, ']')) * JSON_EXTRACT(v2, CONCAT('$[', i, ']')));
+        SET i = i + 1;
+    END WHILE;
+    RETURN dot_prod;
+END
+'''
+
 _SEARCH_QUERY_GET_CANDIDATES = \
     '''
 SELECT vector_id, BIT_COUNT(binary_code ^ UNHEX(%s)) AS hamming_distance
@@ -111,6 +127,14 @@ class Queries:
         return 'DROP FUNCTION IF EXISTS DIST_EUCLID'
 
     @staticmethod
+    def define_dist_dot_func() -> str:
+        return _DIST_DOT_FUNC
+
+    @staticmethod
+    def drop_dist_dot_func() -> str:
+        return 'DROP FUNCTION IF EXISTS DIST_DOT'
+
+    @staticmethod
     def create_db() -> str:
         return f'CREATE DATABASE IF NOT EXISTS {Queries.DATABASE_NAME};'
 
@@ -137,6 +161,7 @@ class Queries:
         dist_func_names = {
             Distance.COSINE: 'DIST_COSINE',
             Distance.EUCLID: 'DIST_EUCLID',
+            Distance.DOT: 'DIST_DOT'
         }
 
         if distance not in dist_func_names:
