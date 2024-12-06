@@ -1,17 +1,15 @@
 import datetime
 import uuid
-from fastapi import FastAPI, Request, HTTPException, Depends, Form, Response, Security
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi import FastAPI, Request, HTTPException, Depends, Response
+from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordBearer
 from fastapi_login import LoginManager
-from fastapi_login.exceptions import InvalidCredentialsException
 import jwt
 from sqlalchemy.orm import Session
 from sqlalchemy import Boolean, Column, DateTime, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
-
 import requests
 from oauthlib.oauth2 import WebApplicationClient
 from pydantic import BaseModel
