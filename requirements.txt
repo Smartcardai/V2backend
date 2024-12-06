@@ -1,4 +1,5 @@
 streamlit
+mysql-connector-python
 fastapi
 langchain-google-genai
 python-dotenv
