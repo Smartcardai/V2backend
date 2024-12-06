@@ -58,6 +58,7 @@ def login_post():
     # Update last login
     user.last_login = datetime.datetime.now()
     db.session.commit()
+    db.session.refresh(user)
 
     # Create access token
     access_token = create_access_token(identity=user.id)
@@ -176,7 +177,7 @@ def oauth_callback():
     return jsonify({"msg": "Google OAuth failed"}), 400
 
 @app.route('/logout', methods=['POST'])
-async def logout():    
+def logout():    
     # Frontend should clear the token from localStorage or cookies
     # Example if the JWT is stored in localStorage
         # localStorage.removeItem('access_token');

@@ -45,19 +45,5 @@ from v2back.models import User
 with app.app_context():
     db.create_all()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Don't remove
+from v2back import routes
