@@ -12,6 +12,7 @@ from ._sql_queries import Queries
 from .distance import Distance
 from .errors import ClientNotInitializedError
 from .errors import VectorConfigDoesNotExistError
+from .filter import Filter
 
 if TYPE_CHECKING:
     from .client import Client
@@ -105,7 +106,7 @@ class Collection:
         )
         self._meta.client._commit()
 
-    def query_points(self, query: list[float], limit: int = 10) -> list[PointResult]:
+    def query_points(self, query: list[float], limit: int = 10, query_filter: Filter | None = None) -> list[PointResult]:
         if not self._meta:
             raise ClientNotInitializedError('Client is not initialized')
 
@@ -135,4 +136,7 @@ class Collection:
                 self.name, placeholders, self._vector_config.distance,
             ), (json.dumps(normalized_query), *candidates, limit),
         )
-        return [PointResult(row[0], row[1], json.loads(row[2]), row[3]) for row in self._meta.client._curr.fetchall()]
+        res = [PointResult(row[0], row[1], json.loads(row[2]), row[3]) for row in self._meta.client._curr.fetchall()]
+        if query_filter:
+            return query_filter(res)
+        return res

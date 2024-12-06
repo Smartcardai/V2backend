@@ -29,3 +29,13 @@ class VectorDimensionDoesNotMatchError(Exception):
 
     def __str__(self) -> str:
         return self.msg
+
+
+class PayloadKeyDoesNotExistError(Exception):
+    """Raised when key not in the payload has been accessed"""
+
+    def __init__(self, msg: str):
+        self.msg = msg
+
+    def __str__(self) -> str:
+        return self.msg
