@@ -8,6 +8,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_bcrypt import Bcrypt
 from oauthlib.oauth2 import WebApplicationClient
+from flask_cors import CORS
 load_dotenv()
 
 app = Flask(__name__)
@@ -26,6 +27,7 @@ bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 client = WebApplicationClient(os.environ.get('GOOGLE_CLIENT_ID'))
 jwt = JWTManager(app)
+CORS(app, resources={r"/":{"origins": ["http://localhost:3000", "https://v1front.smartcardai.com", "https://v2front.smartcardai.com"]}})
 
 # Login manager
 login_manager.login_view = 'login'
