@@ -121,7 +121,7 @@ def login_oauth():
 
     request_uri = client.prepare_request_uri(
         authorization_endpoint,
-        redirect_uri="http://localhost:5000/api/login/oauth/callback",  # Adjust the callback URL
+        redirect_uri= str(os.environ.get('WEBSITE_DOM')) + "login/oauth/callback",  # Adjust the callback URL
         scope=["openid", "email", "profile"]
     )
     return redirect(request_uri)
@@ -137,7 +137,7 @@ def oauth_callback():
     token_url, headers, body = client.prepare_token_request(
         token_endpoint,
         authorization_response=request.url,
-        redirect_url="http://localhost:5000/api/login/oauth/callback",  # Same callback URL
+        redirect_url= str(os.environ.get('WEBSITE_DOM')) + "api/login/oauth/callback",  # Same callback URL
         code=code
     )
     token_response = requests.post(

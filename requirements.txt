@@ -6,3 +6,5 @@ Flask-Login
 python-dotenv
 oauthlib
 requests
+flask-cors
+mysql-connector-python
